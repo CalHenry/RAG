@@ -9,8 +9,9 @@ def _():
     import marimo as mo
     import polars as pl
     from sentence_transformers import SentenceTransformer
+    from datetime import date
 
-    return SentenceTransformer, mo, pl
+    return SentenceTransformer, date, mo, pl
 
 
 @app.cell
@@ -143,6 +144,68 @@ def _(SentenceTransformer):
 def _(chunks, model):
     texts = chunks["chunk_text"].to_list()
     embeddings = model.encode(texts, show_progress_bar=True)
+    return
+
+
+@app.cell
+def _(chunks):
+    testdf = chunks.head().lazy()
+    return (testdf,)
+
+
+@app.cell
+def _(model, pl, testdf):
+    cont = testdf.select("chunk_text").collect().to_series().to_list()
+    test_embeddings = model.encode(cont, show_progress_bar=True)
+    vec_df = testdf.with_columns(
+        pl.Series("vector", test_embeddings.tolist())
+    ).collect()
+    return test_embeddings, vec_df
+
+
+@app.cell
+def _(test_embeddings):
+    test_embeddings.dtype
+    return
+
+
+@app.cell
+def _(vec_df):
+    vec_df.head().schema
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    # Vector database
+    """)
+    return
+
+
+@app.cell
+def _(date):
+    import lancedb
+    from lancedb.pydantic import LanceModel, Vector
+
+
+    class DocumentModel(LanceModel):
+        id_doc: int
+        publish_date: date
+        chunk_text: str
+        vector: Vector(1024)
+
+    return DocumentModel, lancedb
+
+
+@app.cell
+def _(DocumentModel, lancedb, vec_df):
+    db = lancedb.connect("./data/database/test_pydb")
+    table = db.create_table(
+        name="test_doc", schema=DocumentModel, mode="overwrite"
+    )
+
+    table.add(vec_df.to_dicts())
     return
 
 
