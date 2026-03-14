@@ -4,7 +4,7 @@
 ## Stack
 - lancedb for the vector database
 - sentence-transformers for the embedding model
-- langchain-text-splitters for the chunking
+- polars for the chunking
 - polars and pyarrow to deal with dataframes and input data (that is in a spreadsheet format)
 
 
