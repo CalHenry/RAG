@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import date
-from typing import Any
+from typing import Any, Optional
 
 import lancedb
 from lancedb.pydantic import LanceModel, Vector
@@ -17,10 +17,16 @@ class DocumentModel(LanceModel):
 
 
 # query pipeline
+class NuclearArgument(BaseModel):
+    nom: str
+    resume: str
+
+
 class RAGResponse(BaseModel):
-    answer: str
-    sources: list[str]
-    confidence: float
+    is_nuclear: bool
+    arguments: list[NuclearArgument] | None = None
+    sources: list[int]
+    confidence: Optional[float]
 
 
 @dataclass

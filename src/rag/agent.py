@@ -1,6 +1,7 @@
 import logfire
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai.profiles import ModelProfile
 from pydantic_ai.providers.openai import OpenAIProvider
 
 from src.rag.data_models import RAGDeps, RAGResponse
@@ -15,13 +16,15 @@ rag_agent_model = OpenAIChatModel(
     provider=OpenAIProvider(
         base_url="http://127.0.0.1:1234/v1",
     ),
+    # profile=ModelProfile(thinking_tags=("<think>", "</think>")),
 )
 
 rag_agent = Agent(
     rag_agent_model,
     deps_type=RAGDeps,
     output_type=RAGResponse,
-    system_prompt="You are a helpful assistant. Answer using only the provided context.",
+    system_prompt="Tu es un assistant d'analyse documentaire. Réponds uniquement à partir du contexte fourni. Si la réponse n'y figure pas, dis-le clairement.",
+    retries=2,
 )
 
 
@@ -33,4 +36,9 @@ async def inject_context(ctx: RunContext[RAGDeps]) -> str:
         f"[{i + 1}] (score: {c['_distance']:.3f} - date: {c['publish_date']})\n{c['chunk_text']}"
         for i, c in enumerate(chunks)
     )
-    return f"Use only the context below to answer.\n\n{formatted}"
+    return f"""
+    Contexte :
+    ---
+    {formatted}
+    ---
+    """
