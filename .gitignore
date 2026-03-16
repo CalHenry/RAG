@@ -1,8 +1,9 @@
 # manually added
-data/
 .env
-models/
-
+data/
+models/*
+!models/*.py
+!models/README.md
 
 # Python-generated files
 __pycache__/
