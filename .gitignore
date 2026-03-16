@@ -1,4 +1,7 @@
+# manually added
 data/
+.env
+models/
 
 
 # Python-generated files

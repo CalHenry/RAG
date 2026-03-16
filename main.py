@@ -1,13 +1,21 @@
+import os
+
 import lancedb
 import polars as pl
 from sentence_transformers import SentenceTransformer
 
-from src.rag.data_model import DocumentModel
+from config import MODEL_NAME, MODEL_PATH
+from src.rag.data_models import DocumentModel
 from src.rag.ingestion_pipeline_helpers import (
     chunk_documents,
     embedd,
     prepare_raw_data,
 )
+
+# Env variables
+use_local = True
+if not (MODEL_PATH and os.path.isdir(MODEL_PATH) and os.listdir(MODEL_PATH)):
+    use_local = False
 
 """
 Steps:
@@ -32,16 +40,21 @@ STEP = 100
 
 chunk_lf = chunk_documents(lf, CHUNK_SIZE, OVERLAP, STEP)
 
+chunks_test = chunk_lf.head()
 
 # 3. Embedd the chunks
-model = SentenceTransformer("BAAI/bge-large-zh-v1.5")
-df_embeddings = embedd(model, chunk_lf, chunk_column="chunk_text")
+# Embedding model: "BAAI/bge-large-zh-v1.5" - https://huggingface.co/BAAI/bge-large-zh-v1.5
+
+model = SentenceTransformer(
+    MODEL_PATH if use_local else MODEL_NAME, local_files_only=use_local
+)
+df_embeddings = embedd(model, chunks_test, chunk_column="chunk_text")
 
 
 # 4. Create and store the chunks in the vector database
 # We use a LanceModel (pydantic) for input validation
 # Lancedb accepts polars natively because they both use Arrow schema under the hood
 
-db = lancedb.connect("./data/database/rag_vector_db")
+db = lancedb.connect("./data/database/test_lancedb")
 table = db.create_table(name="documents", schema=DocumentModel, mode="overwrite")
 table.add(df_embeddings.to_arrow())

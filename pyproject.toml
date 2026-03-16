@@ -12,5 +12,6 @@ dependencies = [
     "matplotlib>=3.10.8",
     "polars>=1.39.0",
     "pyarrow>=23.0.1",
+    "pydantic-ai-slim[openai]>=1.68.0",
     "sentence-transformers>=5.3.0",
 ]
