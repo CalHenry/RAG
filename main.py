@@ -55,6 +55,6 @@ df_embeddings = embedd(model, chunks_test, chunk_column="chunk_text")
 # We use a LanceModel (pydantic) for input validation
 # Lancedb accepts polars natively because they both use Arrow schema under the hood
 
-db = lancedb.connect("./data/database/test_lancedb")
+db = lancedb.connect("./data/database/rag_vector_db")
 table = db.create_table(name="documents", schema=DocumentModel, mode="overwrite")
 table.add(df_embeddings.to_arrow())

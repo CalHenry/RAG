@@ -1,3 +1,4 @@
+import numpy as np
 import polars as pl
 from sentence_transformers import SentenceTransformer
 
@@ -110,12 +111,12 @@ def embedd(
     """
     texts = chunks_lf.select(chunk_column).collect().to_series().to_list()
     embeddings = model.encode(texts, show_progress_bar=True)
-    df_embeddings = (
-        chunks_lf.with_columns(pl.Series("vector", embeddings.tolist()))
-        .cast(
-            {"vector": pl.Float32}
-        )  # tolist() upscale to python's float64 default but vector db store vectors as float32
-        .collect()
-    )
+    df_embeddings = chunks_lf.with_columns(
+        pl.Series(
+            "vector",
+            embeddings.astype(np.float32).tolist(),  # float32 for the vector database
+            dtype=pl.List(pl.Float32),
+        )
+    ).collect()
 
     return df_embeddings
