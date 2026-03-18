@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import date
-from typing import Annotated, Any, Optional
+from typing import Annotated
 
 import lancedb
 from lancedb.pydantic import LanceModel, Vector
@@ -29,7 +29,7 @@ class RAGResponse(BaseModel):
     is_nuclear: bool
     arguments: list[NuclearArgument] | None = None
     sources: list[int]
-    confidence: Optional[float]
+    confidence: float | None
 
 
 @dataclass
@@ -39,11 +39,14 @@ class RAGDeps:
     embedder: SentenceTransformer
     retrieval_query: str
     top_k: int = 5
-    doc_id: int
+    doc_id: int | list[int]
 
     @classmethod
     def create(
-        cls, embedder: SentenceTransformer, retrieval_query: str, doc_id: int
+        cls,
+        embedder: SentenceTransformer,
+        retrieval_query: str,
+        doc_id: int | list[int],
     ) -> "RAGDeps":
         """Factory method for RAGDeps. db and table_name are set in config.py"""
         return cls(
@@ -53,6 +56,3 @@ class RAGDeps:
             retrieval_query=retrieval_query,
             doc_id=doc_id,
         )
-
-
-RAGDeps.create
