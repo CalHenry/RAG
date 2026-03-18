@@ -12,11 +12,10 @@ logfire.instrument_pydantic_ai()
 
 rag_agent_model = OpenAIChatModel(
     model_name="ministral-3-3b-instruct-2512",
-    # model_name="lfm2.5-1.2b-instruct-mlx",
     provider=OpenAIProvider(
         base_url="http://127.0.0.1:1234/v1",
     ),
-    # profile=ModelProfile(thinking_tags=("<think>", "</think>")),
+    # profile=ModelProfile(thinking_tags=("<think>", "</think>")), # needed for reasoning models
 )
 
 rag_agent = Agent(
@@ -30,7 +29,10 @@ rag_agent = Agent(
 
 @rag_agent.system_prompt
 async def inject_context(ctx: RunContext[RAGDeps]) -> str:
-    chunks = await retrieve(ctx.deps, ctx.deps.query)
+    """
+    1.
+    """
+    chunks = await retrieve(ctx.deps, ctx.deps.query, doc_id=ctx.deps.doc_id)
 
     formatted = "\n\n".join(
         f"[{i + 1}] (score: {c['_distance']:.3f} - date: {c['publish_date']})\n{c['chunk_text']}"

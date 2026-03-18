@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, Optional
+from typing import Annotated, Any, Optional
 
 import lancedb
 from lancedb.pydantic import LanceModel, Vector
@@ -13,7 +13,7 @@ class DocumentModel(LanceModel):
     chunk_id: int
     publish_date: date
     chunk_text: str
-    vector: Vector(1024)
+    vector: Annotated[list[float], Vector(1024)]
 
 
 # query pipeline
@@ -36,3 +36,4 @@ class RAGDeps:
     embedder: Any
     query: str
     top_k: int = 5
+    doc_id: int
