@@ -3,19 +3,13 @@ import json
 import os
 from datetime import datetime
 
-import lancedb
 import polars as pl
 from sentence_transformers import SentenceTransformer
-from src.rag.agent import retrieve
 
-from config import MODEL_NAME, MODEL_PATH, RETRIEVAL_QUERY
-from query_pipeline import deps
-
-"""
-Steps:
-    1.
-"""
-
+from rag.config import FAILED_IDS_PATH, MODEL_NAME, MODEL_PATH, RETRIEVAL_QUERY
+from rag.data_models import RAGDeps
+from rag.query.agent import retrieve
+from rag.query.helpers import log_failed
 
 # Config --------------------------------------------------------------------
 
@@ -23,8 +17,6 @@ OUTPUT_PATH = "data/dataset.parquet"
 
 # Define the doc_ids to process
 DOC_IDS: list[int] = list(range(1, 26))
-
-FAILED_IDS_PATH = "data/failed_ids.txt"
 
 # Embedder setup ------------------------------------------------------------
 
@@ -43,12 +35,11 @@ embedder = SentenceTransformer(
 async def fetch_all(
     retrieval_query, doc_ids: list[int]
 ) -> tuple[list[dict], list[int]]:
-    db = lancedb.connect("./data/database/rag_vector_db")
     failed: list[int] = []
     rows: list[dict] = []
 
     for doc_id in doc_ids:
-        deps = deps
+        deps = RAGDeps.create(embedder, RETRIEVAL_QUERY, doc_id=doc_id)
         try:
             chunks: list[dict] = await retrieve(deps, RETRIEVAL_QUERY, doc_id=doc_id)
 
@@ -58,11 +49,9 @@ async def fetch_all(
             rows.append(
                 {
                     "doc_id": doc_id,
-                    "chunks": json.dumps(
-                        chunks, ensure_ascii=False
-                    ),  # full text, JSON-serialized
+                    "chunks": json.dumps(chunks, ensure_ascii=False),
                     "sources": sources,
-                    "retrieved_at": datetime.utcnow(),
+                    "retrieved_at": datetime.now(),
                 }
             )
             print(f"[OK]  doc_id={doc_id} — {len(chunks)} chunk(s) retrieved")
@@ -101,17 +90,6 @@ def upsert_parquet(new_rows: list[dict], output_path: str) -> None:
 
     combined_df.write_parquet(output_path)
     print(f"\nWrote {len(combined_df)} row(s) to {output_path}")
-
-
-# Failed ids log ------------------------------------------------------------
-def log_failed(failed: list[int], path: str) -> None:
-    if not failed:
-        return
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "a") as f:
-        for doc_id in failed:
-            f.write(f"{doc_id}\n")
-    print(f"Logged {len(failed)} failed doc_id(s) to {path}")
 
 
 # ---------------------------------------------------------------------------

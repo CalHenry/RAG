@@ -1907,7 +1907,7 @@ wheels = [
 [[package]]
 name = "rag"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "fastexcel" },
     { name = "ipython" },
@@ -1919,6 +1919,7 @@ dependencies = [
     { name = "pyarrow" },
     { name = "pydantic-ai-slim", extra = ["openai"] },
     { name = "sentence-transformers" },
+    { name = "typer" },
 ]
 
 [package.metadata]
@@ -1933,6 +1934,7 @@ requires-dist = [
     { name = "pyarrow", specifier = ">=23.0.1" },
     { name = "pydantic-ai-slim", extras = ["openai"], specifier = ">=1.68.0" },
     { name = "sentence-transformers", specifier = ">=5.3.0" },
+    { name = "typer", specifier = ">=0.24.1" },
 ]
 
 [[package]]

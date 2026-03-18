@@ -4,8 +4,8 @@ from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.profiles import ModelProfile
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from src.rag.data_models import RAGDeps, RAGResponse
-from src.rag.query_pipeline_helpers import retrieve
+from rag.data_models import RAGDeps, RAGResponse
+from rag.query.helpers import retrieve
 
 # Observability - debugging -------------------------------------------------
 logfire.configure()

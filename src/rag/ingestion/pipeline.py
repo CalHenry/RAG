@@ -2,17 +2,15 @@ import os
 
 import lancedb
 import polars as pl
+from config import DB_PATH, MODEL_NAME, MODEL_PATH, TABLE_NAME
 from sentence_transformers import SentenceTransformer
 
-from config import DB_PATH, MODEL_NAME, MODEL_PATH, TABLE_NAME
-from src.rag.data_models import DocumentModel
-from src.rag.ingestion.helpers import (
+from rag.data_models import DocumentModel
+from rag.ingestion.helpers import (
     chunk_documents,
     embedd,
     prepare_raw_data,
 )
-
-
 
 
 def run_pipeline() -> None:

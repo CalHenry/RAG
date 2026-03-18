@@ -7,7 +7,7 @@ from lancedb.pydantic import LanceModel, Vector
 from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 
-from config import DB_PATH, TABLE_NAME
+from rag.config import DB_PATH, TABLE_NAME
 
 
 # ingestion pipeline
@@ -38,8 +38,8 @@ class RAGDeps:
     table_name: str
     embedder: SentenceTransformer
     retrieval_query: str
-    top_k: int = 5
     doc_id: int | list[int]
+    top_k: int = 5
 
     @classmethod
     def create(

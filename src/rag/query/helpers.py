@@ -1,4 +1,9 @@
-from src.rag.data_models import RAGDeps
+import os
+from pathlib import Path
+
+import polars as pl
+
+from rag.data_models import RAGDeps
 
 
 async def retrieve(deps: RAGDeps, retrieval_query: str, doc_id: int) -> list[dict]:
@@ -19,3 +24,38 @@ async def retrieve(deps: RAGDeps, retrieval_query: str, doc_id: int) -> list[dic
         .to_list()
     )
     return results
+
+
+# Failed ids log ------------------------------------------------------------
+def log_failed(failed: list[int], path: Path) -> None:
+    if not failed:
+        return
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "a") as f:
+        for doc_id in failed:
+            f.write(f"{doc_id}\n")
+    print(f"Logged {len(failed)} failed doc_id(s) to {path}")
+
+
+# Save AI results to parquet ------------------------------------------------
+def upsert_parquet(df_schema: dict, new_rows: list[dict], output_path: str) -> None:
+    if not new_rows:
+        print("No successful rows to write.")
+        return
+
+    new_df = pl.DataFrame(
+        new_rows,
+        schema=df_schema,
+    )
+
+    if os.path.exists(output_path):
+        existing_df = pl.read_parquet(output_path)
+        # Drop existing rows for doc_ids we just processed (upsert semantics)
+        existing_df = existing_df.filter(~pl.col("doc_id").is_in(new_df["doc_id"]))
+        combined_df = pl.concat([existing_df, new_df]).sort("doc_id")
+    else:
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        combined_df = new_df.sort("doc_id")
+
+    combined_df.write_parquet(output_path)
+    print(f"\nWrote {len(combined_df)} row(s) to {output_path}")
