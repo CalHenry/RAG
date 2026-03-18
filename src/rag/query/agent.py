@@ -7,9 +7,11 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from src.rag.data_models import RAGDeps, RAGResponse
 from src.rag.query_pipeline_helpers import retrieve
 
+# Observability - debugging -------------------------------------------------
 logfire.configure()
 logfire.instrument_pydantic_ai()
 
+# AI agent set up -----------------------------------------------------------
 rag_agent_model = OpenAIChatModel(
     model_name="ministral-3-3b-instruct-2512",
     provider=OpenAIProvider(
@@ -24,6 +26,7 @@ rag_agent = Agent(
     output_type=RAGResponse,
     system_prompt="Tu es un assistant d'analyse documentaire. Réponds uniquement à partir du contexte fourni. Si la réponse n'y figure pas, dis-le clairement.",
     retries=2,
+    model_settings={"temperature": 0.0},
 )
 
 

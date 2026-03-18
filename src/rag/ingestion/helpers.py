@@ -12,10 +12,10 @@ Steps:
 
 
 # 1. Prepare raw data ---------------
-# Create document id and aggregated at the document level
+# Create document id and aggregate at the document level
 def prepare_raw_data(lf_raw: pl.LazyFrame) -> pl.LazyFrame:
     """
-    Input data is documents in chunks of ~20K characters + date metadata. We need to reconstruct the documents (documents level) to process further.
+    Input data are documents in chunks of ~20K characters + date data. We first need to reconstruct the documents (documents level).
     Steps:
         - create an ID for each doc based on the 3 date variables ('annee', 'mois' and 'jour')
         - group by this new ID and join the chunks. Date values are the same for all the chunks so we keep the first value
@@ -50,7 +50,7 @@ def chunk_documents(
     lf: pl.LazyFrame, chunk_size: int, overlap: int, step: int
 ) -> pl.LazyFrame:
     """
-    Chunk the documents with overlap before the embedding (done in pure polars for better performances).
+    Chunk the documents with overlap before the embedding (done in polars for better performances).
 
     Steps:
         - compute the character length of each document
@@ -60,7 +60,7 @@ def chunk_documents(
         Overlap is determined by step and chunk_size: step < chunk_size means windows overlap. Each chunk share (chunk_size - step) characters in common.
         - remove the tiny tail chunk if this chunk is < to the overlap (100% of its content overlaps with the previous chunk, thus no new infos)
         - remove the 3 vars used to create the chunks
-        - clean the edges of the chunks. We cut based on character (can happend mid-word). For RAG we don't want partial words.
+        - clean the edges of the chunks. The cuts  are based on character and can happend mid-word. For RAG we don't want partial words.
         We used regex to match the last word sequence followed by a whitespace. (ex: 'hello world exam' will become 'hellow world')
         - add an ID var for the chunks by documents (for each document the chunk id start at 1). doc_id + chunk_id = unique identifier
 
