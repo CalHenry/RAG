@@ -15,16 +15,16 @@ embedder = SentenceTransformer(
     MODEL_PATH if use_local else MODEL_NAME, local_files_only=use_local
 )
 
-user_query = "Ce document traite-t-il de nucléaire ? Réponds d'abord par Oui ou Non. Si oui, liste chaque argument en une phrase, pas de résumé général."
+retrieval_query = "énergie nucléaire, centrale nucléaire, réacteur atomique"
 
 deps = RAGDeps(
     db=lancedb.connect("./data/database/rag_vector_db"),
     table_name="documents",
     embedder=embedder,
-    query=user_query,
+    retrieval_query=retrieval_query,
     doc_id=9,
 )
 
-result = rag_agent.run_sync(user_query, deps=deps)
+result = rag_agent.run_sync(retrieval_query, deps=deps)
 
 print(result.output)

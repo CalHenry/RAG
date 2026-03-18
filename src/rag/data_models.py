@@ -34,6 +34,6 @@ class RAGDeps:
     db: lancedb.DBConnection
     table_name: str
     embedder: Any
-    query: str
+    retrieval_query: str
     top_k: int = 5
     doc_id: int

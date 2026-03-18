@@ -32,13 +32,14 @@ async def inject_context(ctx: RunContext[RAGDeps]) -> str:
     """
     1.
     """
-    chunks = await retrieve(ctx.deps, ctx.deps.query, doc_id=ctx.deps.doc_id)
+    chunks = await retrieve(ctx.deps, ctx.deps.retrieval_query, doc_id=ctx.deps.doc_id)
 
     formatted = "\n\n".join(
         f"[{i + 1}] (score: {c['_distance']:.3f} - date: {c['publish_date']})\n{c['chunk_text']}"
         for i, c in enumerate(chunks)
     )
     return f"""
+    Ce document traite-t-il de {ctx.deps.retrieval_query} ? Réponds d'abord par Oui ou Non. Si oui, liste chaque argument en une phrase, pas de résumé général.
     Contexte :
     ---
     {formatted}
