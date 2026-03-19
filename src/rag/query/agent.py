@@ -1,24 +1,35 @@
-import logfire
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openai import OpenAIChatModel
-from pydantic_ai.profiles import ModelProfile
 from pydantic_ai.providers.openai import OpenAIProvider
 
+from rag.config import OPENROUTER_API_KEY, USE_OPENROUTER
 from rag.data_models import RAGDeps, RAGResponse
 from rag.query.helpers import retrieve
 
+# from pydantic_ai.profiles import ModelProfile # uncomment for reasoning models
+
 # Observability - debugging -------------------------------------------------
-logfire.configure()
-logfire.instrument_pydantic_ai()
+# import logfire
+# logfire.configure()
+# logfire.instrument_pydantic_ai()
 
 # AI agent set up -----------------------------------------------------------
-rag_agent_model = OpenAIChatModel(
-    model_name="ministral-3-3b-instruct-2512",
-    provider=OpenAIProvider(
-        base_url="http://127.0.0.1:1234/v1",
-    ),
-    # profile=ModelProfile(thinking_tags=("<think>", "</think>")), # needed for reasoning models
-)
+if USE_OPENROUTER:
+    rag_agent_model = OpenAIChatModel(
+        model_name="mistralai/ministral-3b-2512",
+        provider=OpenAIProvider(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=OPENROUTER_API_KEY,
+        ),
+    )
+else:
+    rag_agent_model = OpenAIChatModel(
+        model_name="ministral-3-3b-instruct-2512",
+        provider=OpenAIProvider(
+            base_url="http://127.0.0.1:1234/v1",
+        ),
+        # profile=ModelProfile(thinking_tags=("<think>", "</think>")),
+    )
 
 rag_agent = Agent(
     rag_agent_model,
@@ -33,12 +44,13 @@ rag_agent = Agent(
 @rag_agent.system_prompt
 async def inject_context(ctx: RunContext[RAGDeps]) -> str:
     """
-    1.
+    1. retrieve gather a list[dict] - the retrieved chunks from the vector db (see `data_models.ChunkResult`)
+    2.
     """
     chunks = await retrieve(ctx.deps, ctx.deps.retrieval_query, doc_id=ctx.deps.doc_id)
 
     formatted = "\n\n".join(
-        f"[{i + 1}] (score: {c['_distance']:.3f} - date: {c['publish_date']})\n{c['chunk_text']}"
+        f"[{i + 1}] (score: {c['_distance']:.3f})\n{c['chunk_text']}"
         for i, c in enumerate(chunks)
     )
     return f"""
