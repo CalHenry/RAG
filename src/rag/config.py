@@ -4,13 +4,19 @@ from pathlib import Path
 MODEL_PATH = "./models/bge-large-zh-v1.5"
 MODEL_NAME = "BAAI/bge-large-zh-v1.5"
 
+# query pipeline variables --------------------------------------------------
+BASE = Path(__file__).parent.parent.parent  # := ./src/rag/
+
 # Key words to match against the vectors in the vector database. Also added to the system prompt
 RETRIEVAL_QUERY = "énergie nucléaire, centrale nucléaire, réacteur atomique"
+FAILED_IDS_PATH = BASE / "data" / "failed_ids.txt"
 
+# interim outputs (inputs to merge.py)
+VECTOR_OUTPUT_PATH = BASE / "data" / "interim" / "vector_db_retrieval.parquet"
+AI_OUTPUT_PATH = BASE / "data" / "interim" / "ai_processed.parquet"
+# final merged output
+FINAL_OUTPUT_PATH = BASE / "data" / "processed" / "merged.parquet"
 
 # Vector database -----------------------------------------------------------
-DB_PATH = Path(__file__).parent.parent.parent / "data" / "database" / "rag_vector_db"
+DB_PATH = BASE / "data" / "database" / "rag_vector_db"
 TABLE_NAME = "documents"
-
-# query pipeline variables --------------------------------------------------
-FAILED_IDS_PATH = Path(__file__).parent.parent.parent / "data" / "failed_ids.txt"

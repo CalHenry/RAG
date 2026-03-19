@@ -5,13 +5,18 @@ from datetime import datetime
 import polars as pl
 from sentence_transformers import SentenceTransformer
 
-from rag.config import FAILED_IDS_PATH, MODEL_NAME, MODEL_PATH, RETRIEVAL_QUERY
+from rag.config import (
+    AI_OUTPUT_PATH,
+    FAILED_IDS_PATH,
+    MODEL_NAME,
+    MODEL_PATH,
+    RETRIEVAL_QUERY,
+)
 from rag.data_models import RAGDeps, RAGResponse
 from rag.query.agent import rag_agent
-from rag.query.helpers import log_failed, upsert_parquet
+from rag.query.helpers import log_failed, save_as_parquet
 
-OUTPUT_PATH = "data/dataset.parquet"
-
+# Config --------------------------------------------------------------------
 df_schema = pl.Schema(
     {
         "doc_id": pl.Int64,
@@ -77,10 +82,10 @@ def run_pipeline(
             failed.append(doc_id)
 
     if rows:
-        upsert_parquet(
+        save_as_parquet(
             df_schema,
             rows,
-            OUTPUT_PATH,
+            AI_OUTPUT_PATH,
         )
 
     log_failed(failed, FAILED_IDS_PATH)

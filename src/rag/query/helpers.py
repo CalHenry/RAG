@@ -6,7 +6,9 @@ import polars as pl
 from rag.data_models import RAGDeps
 
 
-async def retrieve(deps: RAGDeps, retrieval_query: str, doc_id: int) -> list[dict]:
+async def retrieve(
+    deps: RAGDeps, retrieval_query: str, doc_id: int | list[int]
+) -> list[dict]:
     """
     Retrieve chunks of documents from the vector database.
     1. Embedd the user query to find the closests vectors in the database
@@ -20,7 +22,7 @@ async def retrieve(deps: RAGDeps, retrieval_query: str, doc_id: int) -> list[dic
         table.search(vector)
         .where(f"id_doc = {doc_id}")
         .limit(deps.top_k)
-        .select(["chunk_text", "publish_date", "_distance"])
+        .select(["chunk_id", "chunk_text", "publish_date", "_distance"])
         .to_list()
     )
     return results
@@ -38,7 +40,10 @@ def log_failed(failed: list[int], path: Path) -> None:
 
 
 # Save AI results to parquet ------------------------------------------------
-def upsert_parquet(df_schema: dict, new_rows: list[dict], output_path: str) -> None:
+def save_as_parquet(
+    df_schema: dict, new_rows: list[dict], output_path: str | Path
+) -> None:
+    """ """
     if not new_rows:
         print("No successful rows to write.")
         return
@@ -50,7 +55,7 @@ def upsert_parquet(df_schema: dict, new_rows: list[dict], output_path: str) -> N
 
     if os.path.exists(output_path):
         existing_df = pl.read_parquet(output_path)
-        # Drop existing rows for doc_ids we just processed (upsert semantics)
+        # Drop existing rows for doc_ids we just processed
         existing_df = existing_df.filter(~pl.col("doc_id").is_in(new_df["doc_id"]))
         combined_df = pl.concat([existing_df, new_df]).sort("doc_id")
     else:
