@@ -1,0 +1,15 @@
+services:
+  rag:
+    image: rag-query
+    build: .
+
+    environment:
+      - API_KEY=${API_KEY}
+
+    volumes:
+      - ./models:/app/models
+      - ./data:/data
+
+    # Default command — override with:
+    #   docker compose run rag uv run python scripts/run_query.py <arg>
+    command: ["uv", "run", "scripts/run_query.py", "--help"]
