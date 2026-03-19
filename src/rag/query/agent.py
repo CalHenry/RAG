@@ -44,8 +44,9 @@ rag_agent = Agent(
 @rag_agent.system_prompt
 async def inject_context(ctx: RunContext[RAGDeps]) -> str:
     """
-    1. retrieve gather a list[dict] - the retrieved chunks from the vector db (see `data_models.ChunkResult`)
-    2.
+    1. retrieve() gather a list[dict] - the retrieved chunks from the vector db (see `data_models.ChunkResult`)
+    2. format the dict into a string
+    3. Add it to the system prompt of the AI agent (see the function decorator)
     """
     chunks = await retrieve(ctx.deps, ctx.deps.retrieval_query, doc_id=ctx.deps.doc_id)
 

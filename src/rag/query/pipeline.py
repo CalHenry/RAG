@@ -34,6 +34,16 @@ def run_pipeline(
     retrieval_query: str = RETRIEVAL_QUERY,
     df_schema: pl.Schema = df_schema,
 ) -> None:
+    """
+    AI part of the RAG.
+    Steps:
+        1. load the embedder
+        2. for each document id, create a RAGDeps object, run the AI agent with the additional context
+        3. collect the data as a list of dict
+        4. save as a paquet file in data/interim
+
+    AI agent recieve the additional context through
+    """
     # Normalize to list
     if isinstance(doc_ids, int):
         doc_ids = [doc_ids]
