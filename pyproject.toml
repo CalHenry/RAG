@@ -6,11 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "fastexcel>=0.19.0",
-    "ipython>=9.11.0",
     "lancedb>=0.29.2",
-    "logfire>=4.29.0",
-    "marimo>=0.20.4",
-    "matplotlib>=3.10.8",
     "polars>=1.39.0",
     "pyarrow>=23.0.1",
     "pydantic-ai-slim[openai]>=1.68.0",
@@ -18,5 +14,17 @@ dependencies = [
     "typer>=0.24.1",
 ]
 
+[project.optional-dependencies]
+data_exploration = [
+    "matplotlib>=3.10.8",
+    "marimo>=0.20.4",
+    "ipython>=9.11.0",
+]
+logfire = ["logfire>=4.29.0"]
+
+
 [tool.uv]
 package = true
+
+[project.scripts]
+merge_df = "rag.query.merge:main"
