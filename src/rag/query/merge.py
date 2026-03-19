@@ -11,6 +11,26 @@ def merge_parts(
     df1 = pl.read_parquet(part1_path)
     df2 = pl.read_parquet(part2_path)
     merged = df1.join(df2, on="doc_id", how="inner").sort("doc_id")
+
+    df2 = merged.with_columns(
+        pl.col("arguments")
+        .str.json_decode(
+            dtype=pl.List(pl.Struct({"nom": pl.String, "resume": pl.String}))
+        )
+        .alias("arguments")
+    ).select(
+        [
+            "doc_id",
+            "publish_date",
+            "is_nuclear",
+            "chunks",
+            "arguments",
+            "retrieval_query",
+            "queried_at",
+            "confidence",
+        ]
+    )
+
     merged.write_parquet(output_path)
     print(f"Merged {len(merged)} rows → {output_path}")
 
