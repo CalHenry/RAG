@@ -1,14 +1,15 @@
 import os
 from pathlib import Path
+from typing import cast
 
 import polars as pl
 
-from rag.data_models import RAGDeps
+from rag.data_models import ChunkResult, RAGDeps
 
 
 async def retrieve(
     deps: RAGDeps, retrieval_query: str, doc_id: int | list[int]
-) -> list[dict]:
+) -> list[ChunkResult]:
     """
     Retrieve chunks of documents from the vector database.
     1. Embedd the user query to find the closests vectors in the database
@@ -25,11 +26,15 @@ async def retrieve(
         .select(["chunk_id", "chunk_text", "publish_date", "_distance"])
         .to_list()
     )
-    return results
+    return cast(list[ChunkResult], results)
 
 
 # Failed ids log ------------------------------------------------------------
 def log_failed(failed: list[int], path: Path) -> None:
+    """
+    Save a simple .txt file with the doc_id for the failed run.
+    If a run fails, open the file to see at which id to restart the RAG.
+    """
     if not failed:
         return
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -43,7 +48,10 @@ def log_failed(failed: list[int], path: Path) -> None:
 def save_as_parquet(
     df_schema: dict, new_rows: list[dict], output_path: str | Path
 ) -> None:
-    """ """
+    """
+    From a polars schema and a list of dict (rows), construct a dataframe and save it as a parquet file.
+    Used by build_dataframe.py and query/pipeline.py
+    """
     if not new_rows:
         print("No successful rows to write.")
         return

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import date
-from typing import Annotated
+from typing import Annotated, TypedDict
 
 import lancedb
 from lancedb.pydantic import LanceModel, Vector
@@ -10,7 +10,7 @@ from sentence_transformers import SentenceTransformer
 from rag.config import DB_PATH, TABLE_NAME
 
 
-# ingestion pipeline
+# ingestion pipeline --------------------------------------------------------
 class DocumentModel(LanceModel):
     id_doc: int
     chunk_id: int
@@ -19,7 +19,7 @@ class DocumentModel(LanceModel):
     vector: Annotated[list[float], Vector(1024)]
 
 
-# query pipeline
+# query pipeline ------------------------------------------------------------
 class NuclearArgument(BaseModel):
     nom: str
     resume: str
@@ -56,3 +56,12 @@ class RAGDeps:
             retrieval_query=retrieval_query,
             doc_id=doc_id,
         )
+
+
+class ChunkResult(TypedDict):
+    """output of retrieve() in helpers.py"""
+
+    chunk_id: int
+    chunk_text: str
+    publish_date: date
+    _distance: float
