@@ -55,7 +55,7 @@ def chunk_documents(
     Steps:
         - compute the character length of each document
         - create a sliding window based on the value of step. This computes the cut points.
-        - explode based on the cut point. This duplicates the text var into n=step rows with the value of the new var "start" being 0 + step*n (ex: [0, 200, 400,...]). Required to cut correctly with overlap.
+        - explode based on the cut point. This duplicates the text var into n=step rows with the value of the new var "start" being 0 + step*n (ex: [100, 200, 300,...]). Required to cut correctly with overlap.
         - slice the texts into the chunks based on the start index given by "start".
         Overlap is determined by step and chunk_size: step < chunk_size means windows overlap. Each chunk share (chunk_size - step) characters in common.
         - remove the tiny tail chunk if this chunk is < to the overlap (100% of its content overlaps with the previous chunk, thus no new infos)

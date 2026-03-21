@@ -3,6 +3,7 @@ import os
 import lancedb
 import polars as pl
 from config import DB_PATH, MODEL_NAME, MODEL_PATH, TABLE_NAME
+from matplotlib.pylab import save
 from sentence_transformers import SentenceTransformer
 
 from rag.data_models import DocumentModel
@@ -13,7 +14,7 @@ from rag.ingestion.helpers import (
 )
 
 
-def run_pipeline() -> None:
+def run_pipeline(save_df_to_disk: bool = True) -> None:
     """
     Steps:
         1. Prepare the raw data for chunking with overlap
@@ -49,7 +50,8 @@ def run_pipeline() -> None:
     df_embeddings = embedd(model, chunk_lf, chunk_column="chunk_text")
 
     # save to disk
-    df_embeddings.write_parquet("./data/processed/df.embeddings.parquet")
+    if save_df_to_disk:
+        df_embeddings.write_parquet("./data/processed/df.embeddings.parquet")
 
     # 4. Create and store the chunks in the vector database ---------------------
     # We use a LanceModel (pydantic) for input validation
@@ -61,4 +63,4 @@ def run_pipeline() -> None:
 
 
 if __name__ == "__main__":
-    run_pipeline()
+    run_pipeline(save_df_to_disk=False)
