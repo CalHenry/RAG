@@ -28,3 +28,6 @@ package = true
 
 [project.scripts]
 merge_df = "rag.query.merge:main"
+
+[tool.uv.scripts]
+create_missing_folders = "bash scripts/create_missing_folders.sh"
