@@ -30,6 +30,41 @@ The documents are transcripts of public institutional legal debates. They are lo
 
 ---
 
+<details>
+<summary>## Folder structure</summary>
+    ```sh
+    .
+    ├── compose.yml
+    ├── Dockerfile
+    ├── LICENSE
+    ├── pyproject.toml
+    ├── README.md
+    ├── uv.lock
+    ├── notebooks
+    │   ├── chunking_benchmark.py
+    │   ├── explo_docs.py
+    │   └── explo_output.py
+    ├── scripts
+    │   ├── run_ingestion.py   # <- entry point for the ingestion pipeline
+    │   └── run_query.py       # <- entry point for the query pipeline
+    └── src
+        └── rag
+            ├── config.py
+            ├── data_models.py
+            ├── ingestion
+            │   ├── helpers.py
+            │   └── pipeline.py
+            └── query
+                ├── agent.py
+                ├── build_dataset.py
+                ├── helpers.py
+                ├── merge.py
+                └── pipeline.py
+    ```
+</details>
+
+---
+
 ## Input documents
 
 Documents are OCR or scraped transcriptions of legal debates. They contain a share of messy content: OCR errors, web page artifacts, and passages that are not part of the debate itself.
@@ -109,3 +144,5 @@ The prompts instruct the LLM to:
 - If yes, list each argument and summarize it in one sentence (*"Si oui, liste chaque argument en une phrase"*)
 
 The prompts can be found in [/rag/query/agents.py](https://github.com/CalHenry/RAG/blob/main/src/rag/query/agent.py).
+
+####
