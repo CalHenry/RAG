@@ -28,7 +28,7 @@ else:
         provider=OpenAIProvider(
             base_url="http://127.0.0.1:1234/v1",
         ),
-        # profile=ModelProfile(thinking_tags=("<think>", "</think>")),
+        # profile=ModelProfile(thinking_tags=("<think>", "</think>")), # uncomment for reasoning models
     )
 
 rag_agent = Agent(

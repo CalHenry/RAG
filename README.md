@@ -1,101 +1,111 @@
 # Local RAG
 
-We want to build a RAG system to help an LLM answer specific questions about documents.  
-The documents are long and messy. They contain a lot of noise that comes from irrelevant text and sentences as well as transcription mistakes, punctuation artifacts, OCR errors.  
-The documents are the transcrip of legal debate public institutions debates.
-The goal is to extract the arguments regarding a specific topic.
-This system is fully local and offline.
+This repo implements a local, fully offline RAG system designed to help an LLM answer specific questions about documents.  
 
-Why RAG works and helps:
-- we know what we want to find
-- we don't know which documents talk about the subject
-- if it does, we want to catch the arguments and have them summarized in a sentence
-- The documents are long and messy and cannot be process directly by LLMs or at the risk of hallucinations or poor restitution from the model
-- RAG allow us to cut the documents into chunks, index them in a database and use only the chunks that most likely contains the arguments
-- The LLM then has a much smaller/ simpler context to process, clear instructions, which result in a much better performances
-- Versatile: We can use the same RAG and database, change the prompts and extract different informations from the documents 
+Queries are scoped to a single document at a time: the vector database is filtered to only the chunks belonging to the target document, and retrieval happens entirely within that document's vectors. It is a **document-level retrieval system**.
 
+The documents are transcripts of public institutional legal debates. They are long and messy, containing irrelevant passages, transcription errors, punctuation artifacts, and OCR noise. The goal is to extract and summarize the arguments made about a specific topic.
+
+**This system is fully local and offline.**
+
+---
+
+## Why RAG?
+
+- We know what we are looking for, but not which documents discuss the topic
+- When a document does address it, we want to surface the relevant arguments and summarize each in a sentence
+- The documents are too long and noisy to feed directly to an LLM without risking hallucinations or poor output quality
+- RAG lets us chunk and index each document, then retrieve only the passages most likely to contain relevant arguments, giving the LLM a smaller, cleaner context and sharper instructions, which significantly improves output quality
+- The system is versatile: the same pipeline and database can be reused with different prompts to extract different types of information (arguments, sentiment, positions, ...)
+
+---
 
 ## Stack
-- [Lancedb](https://lancedb.com/) for the vector database
-- [sentence-transformer](https://sbert.net/) for the embedding model
-- [Polars](https://docs.pola.rs/) for document chunking
-- Polars and Arrow to deal with dataframes and input data
-- [LM studio](https://lmstudio.ai/) for a local LLM api
 
+- [LanceDB](https://lancedb.com/) — vector database
+- [sentence-transformers](https://sbert.net/) — embedding model
+- [Polars](https://docs.pola.rs/) — data manipulation and document chunking
+- [Pydantic-AI](https://ai.pydantic.dev/) — AI agent framework
+- [LM Studio](https://lmstudio.ai/) — local LLM inference server
+
+---
 
 ## Input documents
-- Documents are OCR or scraped transcriptions of legal debates. They contains a share of messy content, OCR errors, artifacts of the web page, irrelevant content or informations that are not the debate's content themselves.  
-- The size of a full documents is ~100k characters but the extraction chunked them into piece of ~20K characters. We also have the publish date (year, month, day)
 
+Documents are OCR or scraped transcriptions of legal debates. They contain a share of messy content: OCR errors, web page artifacts, and passages that are not part of the debate itself.
 
-## RAG system 
-The system got 2 main components:
-- Ingestion pipeline (text embedding, chunking, storage in a vector database)
-- Query pipeline (retriever, prompt builder, AI agent)
+A full document is approximately 100k characters, but the source files deliver them in pre-extracted chunks of ~20k characters. Each document also has a publication date (year, month, day).
 
+---
+
+## RAG system
+
+The system has two main components:
+
+- **Ingestion pipeline** — text chunking, embedding, and storage in the vector database
+- **Query pipeline** — retrieval, prompt construction, and LLM response
+
+---
 
 ### Ingestion pipeline
 
-Ingestion pipeline is purely data work, no AI. 
+The ingestion pipeline is purely data work, no AI involved.
 
-Steps:
-  1. Prepare the raw data for chunking with overlap  
-  2. Chunk the documents
-  3. Embedd the chunks
-  4. Create and store the chunks in the vector database  
+**Steps:**
+1. Re-aggregate the source chunks back to full document level
+2. Re-chunk the documents with overlap
+3. Embed the chunks
+4. Store everything in the vector database
 
-#### Data preparation (steps 1, 2 and 3):
-- Data is first re-aggregated to the full document level (from the original chunks)
-- Then the documents are re chunked with these parameters:   
-chunks: 1000 characters    
-overlap: 200 characters  
-step: 100 characters  
+#### Chunking (steps 1–3)
 
-Details of the chunking emplementation can be found in the [docstrings](https://github.com/CalHenry/RAG/blob/main/src/rag/ingestion/helpers.py#L49).
+Documents are first reconstructed from their source chunks, then re-chunked with the following parameters:
 
-Once the documents are chunked, we embedd them using [BAAI/bge-large-zh-v1.5](https://huggingface.co/BAAI/bge-large-zh-v1.5) with sentence-transformer.  
-The vectors are added to the dataset of the chunked documents (step 2).
+| Parameter | Value |
+|-----------|-------|
+| Chunk size | 1,000 characters |
+| Overlap | 200 characters |
+
+Implementation details are in the [chunking helper docstrings](https://github.com/CalHenry/RAG/blob/main/src/rag/ingestion/helpers.py#L49).
+
+Once chunked, the documents are embedded using [BAAI/bge-large-zh-v1.5](https://huggingface.co/BAAI/bge-large-zh-v1.5) via sentence-transformers. The resulting vectors are added to the chunked document dataset.
 
 #### Vector database (step 4)
-Create a database using LanceDB and store the dataset with the vectors.
-LanceDB allow to store the vectors along side the associated data (chunks text, id and date informations) in a single unified data format.  
-We don't have a huge amount of data and the database is stored on disk in `./data/database/`.
 
+The vector database is built with LanceDB and stored on disk at `./data/database/`.
 
-**Why LanceDB ?**  
-LanceDB uses its  [own data format](https://docs.lancedb.com/lance), built on top of Apache Arrow, the same memory model as Polars. Since they share a common data layer, [they interoperate natively](https://docs.lancedb.com/integrations/data/polars_arrow): no conversion, no copy.  
-In practice, this means I can pass a Polars DataFrame directly into a LanceDB table, or query one back out, with zero overhead. This makes the life of the developper easier (me) and ensure really good performances.  
-Less relevant to this project but still nice to notice: Unlike most vector databases, which store only vectors and metadata, leaving you to fetch the actual data from a separate store, LanceDB keeps vectors and raw data in the same table. In this project, that meant retrieving text chunks directly alongside their embeddings, with no secondary lookup.
+LanceDB stores vectors alongside their associated data (chunk text, document ID, date) in a single unified format, with no secondary lookups needed.
 
+**Why LanceDB?**
+
+LanceDB uses its [own columnar format](https://docs.lancedb.com/lance), built on top of Apache Arrow, the same memory model as Polars. Because they share a common data layer, [they interoperate natively](https://docs.lancedb.com/integrations/data/polars_arrow): no conversion, no copy. In practice, this means passing a Polars DataFrame directly into a LanceDB table, or querying one back out, with zero overhead.
+
+---
 
 ### Query pipeline
 
-Pipeline elements:
-- AI agent (framework: Pydantic-ai, model: [Ministral-3-3B-Instruct](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512-GGUF))
-- Local vector database (LanceDB)
-- Retriever function for the vector database
-- Embedding model (same as the documents embedding model: BAAI/bge-large-zh-v1.5)
-- 2 system prompts, 1 user prompt, additional context from the RAG
+**Components:**
+- Embedding model (same as ingestion: `BAAI/bge-large-zh-v1.5`)
+- LanceDB retriever
+- AI agent (framework: [Pydantic-AI](https://ai.pydantic.dev/), model: [Ministral-3B-Instruct](https://huggingface.co/mistralai/Ministral-3-3B-Instruct-2512-GGUF))
 
-Pipeline execution:
-1. Embedd the user uery
-2. Select the top 5 most similar vectors from the database, append the corresponding chunks to the system prompt
-3. LLM process the user query with the added context
-4. LLM respond following a structured output
+**Execution:**
+1. Embed the user query
+2. Retrieve the top 5 most similar chunks from the target document
+3. Append the retrieved chunks to the system prompt as context
+4. The LLM processes the query and responds with a structured output
 
+#### AI agent & prompts
 
-#### AI agent & Prompts
+[Pydantic-AI](https://ai.pydantic.dev/) is an agent framework built around data validation and structured outputs. Ministral-3B is a small, fast LLM that supports structured output.
 
-Pydantic-ai is an agent framework that is built on top of data validation.  
-Ministral-3-3B is a small LLM that support structured output.  
+LM Studio exposes an OpenAI-compatible API for the local model, which Pydantic-AI can consume directly.
 
-The LLM runs locally thanks to LM studio, that emits an OpenAI like API for the model that we can use in Pydantic-ai.  
+**The prompts are critical here.** The documents are in French, so the prompts are written in French as well, this is important to ensure the query embeddings align correctly with the document vectors in the database.
 
-The prompts are really important in our RAG.  
-The documents are in french and so the prompts should be as well to correctly match the embedding of the prompt with the vectors of the database.  
+The prompts instruct the LLM to:
+- Only use the provided context (*"Réponds uniquement à partir du contexte fourni"*)
+- State whether the document addresses the topic of interest with a yes/no answer (*"Ce document traite-t-il de {topic} ? Réponds d'abord par Oui ou Non."*)
+- If yes, list each argument and summarize it in one sentence (*"Si oui, liste chaque argument en une phrase"*)
 
-The prompts ask the LLm to:
-- Only use the provided context ("Réponds uniquement à partir du contexte fourni")
-- If the document talks about the topic of interest (yes or no answser is asked) ("Ce document traite-t-il de {ctx.deps.retrieval_query} ?", "Réponds d'abord par Oui ou Non.")
-- If yes, list the arguments and summarize them in one sentence. ("Si oui, liste chaque argument en une phrase")
+The prompts can be found in [/rag/query/agents.py](https://github.com/CalHenry/RAG/blob/main/src/rag/query/agent.py).
