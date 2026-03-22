@@ -7,17 +7,17 @@ from dotenv import load_dotenv
 MODEL_PATH = "./models/bge-large-zh-v1.5"
 MODEL_NAME = "BAAI/bge-large-zh-v1.5"
 
-# query pipeline  --------------------------------------------------
+# LLM config ----------------------------------------------------------------
 load_dotenv()
+USE_AI_PROVIDER = os.getenv("USE_AI_PROVIDER", "false").lower() == "true"
+API_KEY = os.getenv("API_KEY")  # None if not set
 
-USE_OPENROUTER = os.getenv("USE_OPENROUTER", "false").lower() == "true"
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")  # None if not set
-
-
-BASE = Path(__file__).parent.parent.parent  # := ./src/rag/
-
+# Prompt --------------------------------------------------------------------
 # Key words to match against the vectors in the vector database. Also added to the system prompt
 RETRIEVAL_QUERY = "énergie nucléaire, centrale nucléaire, réacteur atomique"
+
+# Paths ---------------------------------------------------------------------
+BASE = Path(__file__).parent.parent.parent  # := ./src/rag/
 FAILED_IDS_PATH = BASE / "data" / "failed_ids.txt"
 
 # interim outputs (inputs to merge.py)
