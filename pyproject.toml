@@ -1,8 +1,10 @@
 [project]
 name = "rag"
 version = "0.1.0"
-description = "Add your description here"
+description = "Local RAG system designed to be a document-level retrieval system"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICEN[CS]E.*"]
 requires-python = ">=3.12"
 dependencies = [
     "fastexcel>=0.19.0",
@@ -28,6 +30,3 @@ package = true
 
 [project.scripts]
 merge_df = "rag.query.merge:main"
-
-[tool.uv.scripts]
-create_missing_folders = "bash scripts/create_missing_folders.sh"

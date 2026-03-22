@@ -31,36 +31,38 @@ The documents are transcripts of public institutional legal debates. They are lo
 ---
 
 <details>
-<summary>## Folder structure</summary>
-    ```sh
-    .
-    ├── compose.yml
-    ├── Dockerfile
-    ├── LICENSE
-    ├── pyproject.toml
-    ├── README.md
-    ├── uv.lock
-    ├── notebooks
-    │   ├── chunking_benchmark.py
-    │   ├── explo_docs.py
-    │   └── explo_output.py
-    ├── scripts
-    │   ├── run_ingestion.py   # <- entry point for the ingestion pipeline
-    │   └── run_query.py       # <- entry point for the query pipeline
-    └── src
-        └── rag
-            ├── config.py
-            ├── data_models.py
-            ├── ingestion
-            │   ├── helpers.py
-            │   └── pipeline.py
-            └── query
-                ├── agent.py
-                ├── build_dataset.py
-                ├── helpers.py
-                ├── merge.py
-                └── pipeline.py
-    ```
+<summary>Folder structure</summary>
+
+```sh
+.
+├── compose.yml
+├── Dockerfile
+├── LICENSE
+├── pyproject.toml
+├── README.md
+├── uv.lock
+├── notebooks                  # notebooks used as crashedpad
+│   ├── chunking_benchmark.py  # (polars vs langchain textsplitter)
+│   ├── explo_docs.py
+│   └── explo_output.py
+├── scripts
+│   ├── run_ingestion.py       # <- entry point for the ingestion pipeline
+│   └── run_query.py           # <- entry point for the query pipeline
+└── src
+    └── rag
+        ├── config.py
+        ├── data_models.py
+        ├── ingestion
+        │   ├── helpers.py
+        │   └── pipeline.py
+        └── query
+            ├── agent.py
+            ├── build_dataset.py
+            ├── helpers.py
+            ├── merge.py
+            └── pipeline.py
+```
+
 </details>
 
 ---
@@ -109,7 +111,8 @@ Once chunked, the documents are embedded using [BAAI/bge-large-zh-v1.5](https://
 
 The vector database is built with LanceDB and stored on disk at `./data/database/`.
 
-LanceDB stores vectors alongside their associated data (chunk text, document ID, date) in a single unified format, with no secondary lookups needed.
+LanceDB stores vectors alongside their associated data (chunk text, document ID, date) in a single unified format, with no secondary lookups needed.  
+The dataset stored in the database is [defined here](https://github.com/CalHenry/RAG/blob/main/src/rag/data_models.py#L14).
 
 **Why LanceDB?**
 
@@ -145,4 +148,53 @@ The prompts instruct the LLM to:
 
 The prompts can be found in [/rag/query/agents.py](https://github.com/CalHenry/RAG/blob/main/src/rag/query/agent.py).
 
-####
+##### Data models
+
+Pydantic-AI enforces structured inputs and outputs through Pydantic models. This is central to how the agent works: rather than parsing free-form LLM text, the response is validated against a schema at runtime.
+
+<details>
+<summary>LLM response — <code>RAGResponse</code></summary>
+
+The top-level model the LLM must conform to. It captures whether the document is relevant, the list of extracted arguments, the source chunk IDs used, and an optional confidence score.
+```python
+class RAGResponse(BaseModel):
+    is_nuclear: bool
+    arguments: list[NuclearArgument] | None = None
+    sources: list[int]
+    confidence: float | None
+```
+</details>
+
+<details>
+<summary>Argument structure — <code>NuclearArgument</code></summary>
+
+Each argument is represented as a named position with a one-sentence summary. The LLM is expected to return a list of these.
+```python
+class NuclearArgument(BaseModel):
+    nom: str
+    resume: str
+```
+</details>
+
+
+## Reproduce
+
+The project is not shiped with the data but you can reuse the RAG system code, embedd your own documents, change the prompts and use it the same way.
+
+0. [Download UV](https://docs.astral.sh/uv/getting-started/installation/)
+
+1. Clone the repo 
+```sh
+git clone https://github.com/CalHenry/RAG.git
+```
+
+2. Set up the virtual environment
+
+From the root of the project, create the virtual environment:
+```sh
+uv sync
+```
+Then, create the missing folders (data/ and models/)
+```sh
+./create_missing_folders.sh
+```
