@@ -41,7 +41,7 @@ The documents are transcripts of public institutional legal debates. They are lo
 ├── pyproject.toml
 ├── README.md
 ├── uv.lock
-├── notebooks                  # notebooks used as crashedpad
+├── notebooks                  # notebooks used as scratchpads
 │   ├── chunking_benchmark.py  # (polars vs langchain textsplitter)
 │   ├── explo_docs.py
 │   └── explo_output.py
@@ -94,7 +94,7 @@ The ingestion pipeline is purely data work, no AI involved.
 3. Embed the chunks
 4. Store everything in the vector database
 
-#### Chunking (steps 1–3)
+#### Data preparation (steps 1–3)
 
 Documents are first reconstructed from their source chunks, then re-chunked with the following parameters:
 
@@ -112,7 +112,19 @@ Once chunked, the documents are embedded using [BAAI/bge-large-zh-v1.5](https://
 The vector database is built with LanceDB and stored on disk at `./data/database/`.
 
 LanceDB stores vectors alongside their associated data (chunk text, document ID, date) in a single unified format, with no secondary lookups needed.  
-The dataset stored in the database is [defined here](https://github.com/CalHenry/RAG/blob/main/src/rag/data_models.py#L14).
+
+<details>
+<summary>The dataset stored in the database is defined by — <code>DocumentModel</code></summary>
+
+```python
+class DocumentModel(LanceModel):
+    id_doc: int
+    chunk_id: int
+    publish_date: date
+    chunk_text: str
+    vector: Annotated[list[float], Vector(1024)]
+```
+</details>
 
 **Why LanceDB?**
 
@@ -190,11 +202,37 @@ git clone https://github.com/CalHenry/RAG.git
 
 2. Set up the virtual environment
 
-From the root of the project, create the virtual environment:
+From the root of the project:
 ```sh
 uv sync
 ```
 Then, create the missing folders (data/ and models/)
 ```sh
+chmod +x create_missing_folders.sh     # make the script executable
 ./create_missing_folders.sh
 ```
+
+3. Configure the LLM or your API key:
+
+Open `rag/config.py` and set the value of `USE_AI_PROVIDER` to true or false.  
+If false, update the name of the model used in `rag/query/agent.py` line 27.  
+If true, create a .env file, add you API key as "API_KEY": 
+```sh
+touch .env
+echo "API_KEY=your_api_key_here" >> .env
+```
+Update the name of the LLM used based on your provider (in `rag/query/agent.py`).
+
+4. Run the pipelines
+
+```sh
+uv run scripts/run_ingestion.py
+```
+```sh
+uv run scripts/run_query.py --range 1:45
+```
+
+---
+
+## 🛡️ License <a name="license"></a>
+Project is distributed under [MIT License](https://github.com/CalHenry/RAG/blob/main/LICENSE)

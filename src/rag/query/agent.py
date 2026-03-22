@@ -2,7 +2,7 @@ from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from rag.config import OPENROUTER_API_KEY, USE_OPENROUTER
+from rag.config import API_KEY, USE_AI_PROVIDER
 from rag.data_models import RAGDeps, RAGResponse
 from rag.query.helpers import retrieve
 
@@ -14,12 +14,12 @@ from rag.query.helpers import retrieve
 # logfire.instrument_pydantic_ai()
 
 # AI agent set up -----------------------------------------------------------
-if USE_OPENROUTER:
+if USE_AI_PROVIDER:
     rag_agent_model = OpenAIChatModel(
         model_name="mistralai/ministral-3b-2512",
         provider=OpenAIProvider(
             base_url="https://openrouter.ai/api/v1",
-            api_key=OPENROUTER_API_KEY,
+            api_key=API_KEY,
         ),
     )
 else:
