@@ -34,16 +34,29 @@ def _(document_selector):
 
 @app.cell
 def _(fig, mo, smooth_switch):
-    # plot
-    mo.vstack([fig, smooth_switch])
-    return
+    # Plot
+    # Mak the plot reactive - User can select obs using the mouse on the plot
+    ax = mo.ui.matplotlib(fig.gca())
+    ax
+
+    mo.vstack([ax, smooth_switch])
+    return (ax,)
 
 
 @app.cell
-def _(df):
-    # dataset
-    df
-    return
+def _(ax, chunk_id, df, mo, pl, similarity):
+    # Show dataset
+    mask = ax.value.get_mask(chunk_id, similarity)
+
+    # 2 tab: 1 for full dataset, one for the subset from the reactive plot
+    tabs = mo.ui.tabs(
+        {
+            "Full dataset": df,
+            "Selection": df.with_columns(pl.col("chunk_id")).filter(mask),
+        }
+    )
+    tabs
+    return (mask,)
 
 
 @app.cell
@@ -95,11 +108,15 @@ def _(mo, np):
 
 
 @app.cell
-def _(df, mo, pl):
+def _(ax, df, mask, mo, pl):
     # Chunks dropdown
-    top_k_chunks = df.with_columns(
-        pl.col("_distance").sort(descending=False)
-    ).head(15)
+    # Show the full dataset or the if there is a selection
+    source_df = df.with_columns(pl.col("_distance").sort(descending=False))
+
+    has_selection = type(ax.value).__name__ == "BoxSelection"
+    top_k_chunks = (
+        source_df.filter(mask).head(15) if has_selection else source_df.head(15)
+    )
 
     chunk_selector = mo.ui.dropdown(
         options={
@@ -143,7 +160,7 @@ async def _(
     smooth_switch,
     user_query,
 ):
-    df, fig, chunk_id = await document_relevance_map(
+    df, fig, chunk_id, similarity = await document_relevance_map(
         embedder,
         user_query.value,
         doc_id=document_selector.value,
@@ -151,7 +168,7 @@ async def _(
     )
 
     df = df.sort(pl.col("_distance"))
-    return df, fig
+    return chunk_id, df, fig, similarity
 
 
 @app.cell
@@ -174,7 +191,7 @@ def _():
     from scipy.ndimage import gaussian_filter1d
     from sentence_transformers import SentenceTransformer
 
-    from rag.config import MODEL_NAME, MODEL_PATH, TABLE_NAME
+    from rag.config import MODEL_NAME, MODEL_PATH
     from rag.data_models import ChunkResult, RAGDeps
     from rag.query.helpers import retrieve
 
@@ -183,9 +200,7 @@ def _():
         MODEL_PATH,
         RAGDeps,
         SentenceTransformer,
-        TABLE_NAME,
         gaussian_filter1d,
-        lancedb,
         mo,
         np,
         pl,
@@ -206,18 +221,7 @@ def _(MODEL_NAME, MODEL_PATH, SentenceTransformer):
 
 
 @app.cell
-def _(
-    APP_DB_PATH,
-    RAGDeps,
-    SentenceTransformer,
-    TABLE_NAME,
-    gaussian_filter1d,
-    lancedb,
-    np,
-    pl,
-    plt,
-    retrieve,
-):
+def _(RAGDeps, SentenceTransformer, gaussian_filter1d, np, pl, plt, retrieve):
     async def document_relevance_map(
         embedder: SentenceTransformer,
         retrieval_query: str,
@@ -225,7 +229,7 @@ def _(
         smoothing: bool = True,
         smooth_sigma: int = 8,
         top_k_markers: int = 5,
-    ) -> pl.DataFrame:
+    ):
         """
         Dataviz: Distribution of the' _distance' variable for a document of the vector database.
         Steps:
@@ -237,9 +241,8 @@ def _(
         """
 
         # override top_k to get all chunks
-        deps = RAGDeps(
-            db=lancedb.connect(APP_DB_PATH),
-            table_name=TABLE_NAME,
+
+        deps = RAGDeps.create(
             embedder=embedder,
             retrieval_query=retrieval_query,
             doc_id=doc_id,
@@ -280,7 +283,7 @@ def _(
         plt.tight_layout()
         # plt.show()
 
-        return df, fig, chunk_ids
+        return df, fig, chunk_ids, similarity
 
     return (document_relevance_map,)
 

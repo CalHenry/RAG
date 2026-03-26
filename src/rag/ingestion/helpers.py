@@ -107,7 +107,7 @@ def embedd(
         - select and convert the chunks to a list
         - embedd with the model
         - add the embeddings to the lazyframe as a list of float32 then collect.
-        This dataframe will can be send directly to the vector database (lancedb accepts polars natively trought Arrow)
+        This dataframe will be send directly to the vector database (lancedb accepts polars natively trought Arrow)
     """
     texts = chunks_lf.select(chunk_column).collect().to_series().to_list()
     embeddings = model.encode(texts, show_progress_bar=True)

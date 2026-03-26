@@ -13,5 +13,8 @@ dist/
 wheels/
 *.egg-info
 
+# apple specific
+.DS_Store
+
 # Virtual environments
 .venv
