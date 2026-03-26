@@ -5,6 +5,10 @@ models/*
 !models/*.py
 !models/README.md
 
+# version for HF - ducplicates of "doc_viz"
+doc_viz_HF.py
+
+
 # Python-generated files
 __pycache__/
 *.py[oc]

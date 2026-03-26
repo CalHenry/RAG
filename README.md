@@ -8,6 +8,8 @@ The documents are transcripts of public institutional legal debates. They are lo
 
 **This system is fully local and offline.**
 
+🤗 Come with a simple interactive app hosted on HuggingFace[![Open in Spaces](https://huggingface.co/datasets/huggingface/badges/resolve/main/open-in-hf-spaces-md-dark.svg)](https://huggingface.co/spaces/Calhenry/Explore_docs)
+
 ---
 
 ## Why RAG?

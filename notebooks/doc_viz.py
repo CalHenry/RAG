@@ -21,6 +21,57 @@ app = marimo.App(width="full")
 
 
 @app.cell
+def _(mo):
+    reminders_text = mo.md(
+        "**Documents** are transcripts of public institutional legal debates. They are long and messy, containing irrelevant passages, transcription errors, punctuation artifacts, and OCR noise.  \n **Similarity search** is performed by the database using a [kNN algorithm]?(https://en.wikipedia.org/wiki/K-nearest_neighbors_algorithm)."
+    )
+
+    a = mo.accordion(
+        {
+            "Reminders": reminders_text,
+            # "Similarity search": mo.md("Nothing!"),
+        },
+    )
+
+    callout = mo.callout(a, kind="info")
+    return (callout,)
+
+
+@app.cell(hide_code=True)
+def _(callout, mo):
+    mo.md(rf"""
+    # Document exploration playground
+
+    This Space is linked to [this RAG project](https://github.com/CalHenry/RAG), please check it out for the full documentation.  
+    This app is a lens on the data retrieval part of a RAG system.  You are positioned between the user query submission and the augmentation of the LLM context with the retrieved content.
+
+    In the current state of the project, we retrieve the top 5 similar vectors from the database based on the user query, but it would be nice to be able to explore visually how the entire document respond to the user query.  
+
+    With this app we can:
+    - Verify whether the top vectors contain the relevant information we seek in the documents
+    - Get a sense of the performance/ accuracy of the retrieval algorithm
+    - Explore the distribution of rich content within the document
+    - Manipulate, select, zoom in and out from the whole document to the content of one chunk.
+
+    {callout}
+
+    The app contains 3 interactive components:
+    - A text input field for entering a user query or keywords to match with the document content.
+    - A plot of the similarity scores for all the chunks of the document. You can draw an area on the plot to select the chunks of a region
+    - A dataset from the retrieval, sorted by increasing _distance
+    """)
+    return
+
+
+@app.cell(hide_code=True)
+def _(mo):
+    mo.md(r"""
+    ----
+    """)
+    return
+
+
+@app.cell
 def _(user_query):
     user_query
     return
@@ -35,11 +86,21 @@ def _(document_selector):
 @app.cell
 def _(fig, mo, smooth_switch):
     # Plot
-    # Mak the plot reactive - User can select obs using the mouse on the plot
+    # plot is reactive - User can select obs using the mouse
     ax = mo.ui.matplotlib(fig.gca())
     ax
 
-    mo.vstack([ax, smooth_switch])
+    plot_footnote = mo.md(
+        r"For clarity, the y-axis displays Relevance, calculated as the normalized inverse of Similarity: ${Relevance} = 1 - \frac{\text{Similarity}}{\max(\text{Similarity})}$. This transformation ensures that closer vectors receive higher relevance scores."
+    )
+
+    mo.vstack(
+        [
+            ax,
+            smooth_switch,
+            plot_footnote,
+        ]
+    )
     return (ax,)
 
 
@@ -146,12 +207,6 @@ def _(mo):
 
 
 @app.cell
-def _():
-    # Execution of the function
-    return
-
-
-@app.cell
 async def _(
     document_relevance_map,
     document_selector,
@@ -160,6 +215,8 @@ async def _(
     smooth_switch,
     user_query,
 ):
+    # Execution of the function
+
     df, fig, chunk_id, similarity = await document_relevance_map(
         embedder,
         user_query.value,
@@ -229,7 +286,7 @@ def _(RAGDeps, SentenceTransformer, gaussian_filter1d, np, pl, plt, retrieve):
         smoothing: bool = True,
         smooth_sigma: int = 8,
         top_k_markers: int = 5,
-    ):
+    ) -> tuple[pl.DataFrame, plt.Figure, np.array, int]:
         """
         Dataviz: Distribution of the' _distance' variable for a document of the vector database.
         Steps:
