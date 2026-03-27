@@ -46,7 +46,7 @@ The documents are transcripts of public institutional legal debates. They are lo
 ├── uv.lock
 ├── notebooks                  # notebooks used as scratchpads
 │   ├── chunking_benchmark.py  # (polars vs langchain textsplitter)
-│   ├── doc_viz.py             # <- notebook hosted in HF Spaces
+│   ├── doc_viz.py             # <- notebook hosted on HF Spaces
 │   ├── explo_docs.py
 │   └── explo_output.py
 ├── scripts
